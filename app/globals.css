@@ -1,0 +1,112 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+
+  /*
+   * Sans-serif géométrique et arrondie, dans l'esprit de StudiUM.
+   * Volontairement une pile système : aucune requête réseau, donc le projet
+   * démarre aussi hors ligne. Pour utiliser Poppins ou Nunito Sans, ajoutez
+   * `next/font/google` dans app/layout.tsx et branchez la variable ici.
+   */
+  --font-app: "Nunito Sans", "Poppins", ui-rounded, "SF Pro Rounded",
+    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue",
+    Arial, sans-serif;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  background: #e8ebee; /* fond hors « téléphone » en desktop */
+  color: #1d2125;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+@layer components {
+  /* Carte StudiUM : 12px, bordure 1px, ombre très douce */
+  .su-card {
+    @apply rounded-card border border-line bg-white shadow-card;
+  }
+
+  /* Pilule de département */
+  .su-pill {
+    @apply inline-block rounded-full bg-primary-light px-3 py-1 text-[13px] leading-tight text-primary-dark;
+  }
+
+  /* Cible tactile accessible : 44px minimum */
+  .su-tap {
+    @apply min-h-[44px] min-w-[44px];
+  }
+
+  .su-title {
+    @apply text-[20px] font-semibold text-ink;
+  }
+
+  .su-card-title {
+    @apply text-[17px] font-normal text-ink;
+  }
+
+  .su-meta {
+    @apply text-[13px] text-muted;
+  }
+
+  .su-input {
+    @apply w-full rounded-lg border border-line bg-white px-3 py-2.5 text-[15px]
+           text-ink outline-none placeholder:text-muted
+           focus:border-primary focus:ring-2 focus:ring-primary/20;
+  }
+}
+
+/* Défilement horizontal sans barre visible (carrousels, onglets) */
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Transition douce entre les pages (150–200 ms) */
+@keyframes su-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.su-page-enter {
+  animation: su-fade-in 180ms ease-out;
+}
+
+/* Élément soulevé pendant un glisser-déposer */
+.su-dragging {
+  opacity: 0.9;
+  transform: scale(1.03);
+  box-shadow: 0 12px 28px rgba(29, 33, 37, 0.18);
+  cursor: grabbing;
+}
+
+/* Ligne bleue d'insertion */
+.su-drop-line {
+  height: 2px;
+  border-radius: 2px;
+  background: #0f63c8;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .su-page-enter {
+    animation: none;
+  }
+  * {
+    transition-duration: 0.01ms !important;
+  }
+}
