@@ -26,10 +26,17 @@ les meilleures conditions, activez le mode appareil mobile des outils de dévelo
 Autres commandes :
 
 ```bash
-npm run build   # build de production
-npm start       # sert le build
-npm run lint    # ESLint 9 (config plate, règles Next.js)
+npm run build     # build de production
+npm start         # sert le build
+npm run lint      # ESLint 9 (config plate, règles Next.js)
+npm run artifact  # démo autonome en un seul fichier HTML
 ```
+
+`npm run artifact` produit `artifact/studium.html` : l'application entière —
+même code, CSS et JavaScript inclus — dans un fichier unique de ~400 Ko,
+ouvrable par double-clic, sans serveur ni installation. Pratique pour montrer
+le projet à quelqu'un. Le routage y passe par le hash de l'URL (`#/cours`) au
+lieu du routeur Next : voir `artifact/shim/`.
 
 **Node.js 20.9 ou plus** est requis (contrainte de Next 16).
 

@@ -13,3 +13,8 @@ next-env.d.ts
 # Fichiers d'instructions pour agents IA, régénérés par `next dev` (Next 16)
 AGENTS.md
 CLAUDE.md
+
+# Sorties générées par `npm run artifact`
+artifact/bundle.js
+artifact/styles.css
+artifact/studium.html
