@@ -9,7 +9,9 @@ import {
   FileCheck2,
   Folder,
   ListChecks,
+  Trash2,
 } from "lucide-react";
+import { EditableGrade } from "./EditableGrade";
 import { useStudium } from "@/store/useStudium";
 import { formatGrade } from "@/lib/format";
 import { courseTotal, weightedTotal } from "@/lib/grades";
@@ -24,11 +26,23 @@ const KIND_ICON: Record<GradeItemKind, typeof ClipboardList> = {
 };
 
 /**
- * Onglet « Notes » en lecture (mode étudiant).
+ * Onglet « Notes ».
  * Deux colonnes : élément d'évaluation / grade. Le chevron déplie la ligne
  * pour révéler note max, pondération, rétroaction et date de remise.
+ *
+ * En mode professeur (`editable`), un appui long sur une note (ou un clic,
+ * ou le crayon) l'ouvre en édition — même geste que le glisser-déposer
+ * ailleurs dans l'app.
  */
-export function GradesTable({ course, studentId }: { course: Course; studentId: string }) {
+export function GradesTable({
+  course,
+  studentId,
+  editable = false,
+}: {
+  course: Course;
+  studentId: string;
+  editable?: boolean;
+}) {
   const lang = useStudium((s) => s.lang);
   const total = courseTotal(course, studentId);
 
@@ -58,7 +72,14 @@ export function GradesTable({ course, studentId }: { course: Course; studentId: 
           </tr>
 
           {course.gradeItems.map((item) => (
-            <GradeRows key={item.id} item={item} studentId={studentId} depth={1} />
+            <GradeRows
+              key={item.id}
+              item={item}
+              studentId={studentId}
+              depth={1}
+              courseId={course.id}
+              editable={editable}
+            />
           ))}
 
           {/* Total du cours */}
@@ -84,18 +105,25 @@ function GradeRows({
   item,
   studentId,
   depth,
+  courseId,
+  editable,
 }: {
   item: GradeItem;
   studentId: string;
   depth: number;
+  courseId: string;
+  editable: boolean;
 }) {
   const lang = useStudium((s) => s.lang);
+  const setGrade = useStudium((s) => s.setGrade);
+  const setFeedback = useStudium((s) => s.setFeedback);
+  const deleteGradeItem = useStudium((s) => s.deleteGradeItem);
   const [open, setOpen] = useState(false);
 
   const isFolder = Boolean(item.children?.length);
   const Icon = isFolder ? Folder : KIND_ICON[item.kind];
   const grade = item.grades[studentId];
-  const feedback = item.feedback?.[studentId];
+  const feedback = item.feedback?.[studentId] ?? "";
 
   if (isFolder) {
     const subtotal = weightedTotal(item.children!, studentId);
@@ -111,7 +139,14 @@ function GradeRows({
         </tr>
 
         {item.children!.map((child) => (
-          <GradeRows key={child.id} item={child} studentId={studentId} depth={depth + 1} />
+          <GradeRows
+            key={child.id}
+            item={child}
+            studentId={studentId}
+            depth={depth + 1}
+            courseId={courseId}
+            editable={editable}
+          />
         ))}
 
         <tr className="border-t border-line">
@@ -133,23 +168,50 @@ function GradeRows({
     <Fragment>
       <tr className="border-t border-line">
         <td className="px-3 py-2.5" style={{ paddingLeft: 12 + depth * 4 }}>
-          <button
-            type="button"
-            onClick={() => setOpen((v) => !v)}
-            aria-expanded={open}
-            className="flex w-full items-start gap-1.5 text-left"
-          >
-            {open ? (
-              <ChevronDown size={18} className="mt-0.5 shrink-0 text-muted" aria-hidden />
-            ) : (
-              <ChevronRight size={18} className="mt-0.5 shrink-0 text-muted" aria-hidden />
+          <div className="flex items-start gap-1">
+            <button
+              type="button"
+              onClick={() => setOpen((v) => !v)}
+              aria-expanded={open}
+              className="flex min-w-0 flex-1 items-start gap-1.5 text-left"
+            >
+              {open ? (
+                <ChevronDown size={18} className="mt-0.5 shrink-0 text-muted" aria-hidden />
+              ) : (
+                <ChevronRight size={18} className="mt-0.5 shrink-0 text-muted" aria-hidden />
+              )}
+              <Icon size={16} className="mt-0.5 shrink-0 text-muted" aria-hidden />
+              <span className="min-w-0 flex-1 text-[15px] leading-snug text-ink">{item.name}</span>
+            </button>
+
+            {editable && (
+              <button
+                type="button"
+                onClick={() => {
+                  if (window.confirm(`${t("deleteConfirm", lang)}\n\n${item.name}`)) {
+                    deleteGradeItem(courseId, item.id);
+                  }
+                }}
+                aria-label={`Supprimer ${item.name}`}
+                className="su-tap grid shrink-0 place-items-center rounded-full text-muted hover:text-danger"
+              >
+                <Trash2 size={15} aria-hidden />
+              </button>
             )}
-            <Icon size={16} className="mt-0.5 shrink-0 text-muted" aria-hidden />
-            <span className="min-w-0 flex-1 text-[15px] leading-snug text-ink">{item.name}</span>
-          </button>
+          </div>
         </td>
         <td className="px-3 py-2.5 align-top text-right text-[15px] text-ink">
-          {formatGrade(grade)}
+          <EditableGrade
+            value={grade}
+            max={item.max}
+            feedback={feedback}
+            itemName={item.name}
+            editable={editable}
+            onSave={(value, text) => {
+              setGrade(courseId, item.id, studentId, value);
+              setFeedback(courseId, item.id, studentId, text);
+            }}
+          />
         </td>
       </tr>
 

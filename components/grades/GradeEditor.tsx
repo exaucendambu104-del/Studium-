@@ -1,8 +1,9 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Save, Trash2 } from "lucide-react";
+import { Save } from "lucide-react";
 import { GradeItemForm } from "./GradeItemForm";
+import { GradesTable } from "./GradesTable";
 import { Dropdown } from "@/components/ui/Dropdown";
 import { useToast } from "@/components/ui/Toast";
 import { useStudium } from "@/store/useStudium";
@@ -14,20 +15,20 @@ import type { Course } from "@/lib/types";
 type View = "single" | "matrix";
 
 /**
- * Onglet « Notes » en mode professeur : saisie des notes.
+ * Onglet « Notes » en mode professeur.
  *
  * Deux vues :
- *  - « single »  → un étudiant, toutes ses évaluations, avec rétroaction
- *  - « matrix »  → tableau tous les étudiants × toutes les évaluations
- *
- * Les saisies sont conservées localement puis poussées dans le store au
- * clic sur « Enregistrer », ce qui permet d'annuler en changeant d'étudiant.
+ *  - « single » → la même table que la vue étudiant, éditable : un appui
+ *    long sur une note (ou un clic, ou le crayon) l'ouvre et l'enregistre
+ *    aussitôt — même geste que le glisser-déposer ailleurs dans l'app.
+ *  - « matrix » → tableau tous les étudiants × toutes les évaluations pour
+ *    la saisie en lot ; les cellules restent des champs classiques avec un
+ *    bouton « Enregistrer » explicite, mieux adapté à remplir beaucoup de
+ *    notes d'un coup qu'un appui long répété sur chaque cellule.
  */
 export function GradeEditor({ course }: { course: Course }) {
   const lang = useStudium((s) => s.lang);
   const setGrade = useStudium((s) => s.setGrade);
-  const setFeedback = useStudium((s) => s.setFeedback);
-  const deleteGradeItem = useStudium((s) => s.deleteGradeItem);
   const toast = useToast();
 
   const students = useMemo(
@@ -39,20 +40,13 @@ export function GradeEditor({ course }: { course: Course }) {
   const [view, setView] = useState<View>("single");
   const [studentId, setStudentId] = useState(students[0]?.id ?? "");
   const [drafts, setDrafts] = useState<Record<string, string>>({});
-  const [feedbackDrafts, setFeedbackDrafts] = useState<Record<string, string>>({});
 
-  /** Valeur affichée : brouillon en cours de saisie, sinon valeur du store. */
+  /** Valeur affichée dans la matrice : brouillon en cours de saisie, sinon valeur du store. */
   const gradeValue = (itemId: string, sid: string) => {
     const key = `${itemId}:${sid}`;
     if (key in drafts) return drafts[key];
     const stored = items.find((i) => i.id === itemId)?.grades[sid];
     return stored === null || stored === undefined ? "" : String(stored).replace(".", ",");
-  };
-
-  const feedbackValue = (itemId: string, sid: string) => {
-    const key = `${itemId}:${sid}`;
-    if (key in feedbackDrafts) return feedbackDrafts[key];
-    return items.find((i) => i.id === itemId)?.feedback?.[sid] ?? "";
   };
 
   /** Total pondéré recalculé en direct, brouillons compris. */
@@ -66,7 +60,7 @@ export function GradeEditor({ course }: { course: Course }) {
     return Math.round(base * 100) / 100;
   };
 
-  function save() {
+  function saveMatrix() {
     let invalid = 0;
 
     for (const [key, raw] of Object.entries(drafts)) {
@@ -87,25 +81,15 @@ export function GradeEditor({ course }: { course: Course }) {
       setGrade(course.id, itemId, sid, Math.round(value * 100) / 100);
     }
 
-    for (const [key, text] of Object.entries(feedbackDrafts)) {
-      const [itemId, sid] = key.split(":");
-      setFeedback(course.id, itemId, sid, text);
-    }
-
     setDrafts({});
-    setFeedbackDrafts({});
-    toast(
-      invalid > 0
-        ? `${invalid} note(s) hors bornes ignorée(s)`
-        : t("saved", lang)
-    );
+    toast(invalid > 0 ? `${invalid} note(s) hors bornes ignorée(s)` : t("saved", lang));
   }
 
-  const dirty = Object.keys(drafts).length + Object.keys(feedbackDrafts).length > 0;
+  const dirty = Object.keys(drafts).length > 0;
 
   return (
-    <div className="m-3 space-y-3">
-      <section className="su-card space-y-3 p-4">
+    <>
+      <section className="su-card m-3 space-y-3 p-4">
         <div className="flex rounded-full bg-surface p-1">
           {(
             [
@@ -143,73 +127,9 @@ export function GradeEditor({ course }: { course: Course }) {
       </section>
 
       {view === "single" ? (
-        <section className="su-card divide-y divide-line">
-          {items.map((item) => (
-            <div key={item.id} className="p-4">
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0 flex-1">
-                  <p className="text-[15px] leading-snug text-ink">{item.name}</p>
-                  <p className="su-meta">
-                    {t("maxGrade", lang)} {formatGrade(item.max)} · {item.weight} %
-                  </p>
-                </div>
-
-                <div className="flex shrink-0 items-center gap-1">
-                  <input
-                    inputMode="decimal"
-                    value={gradeValue(item.id, studentId)}
-                    onChange={(e) =>
-                      setDrafts((d) => ({ ...d, [`${item.id}:${studentId}`]: e.target.value }))
-                    }
-                    placeholder="-"
-                    aria-label={`Note — ${item.name}`}
-                    aria-invalid={isOutOfRange(gradeValue(item.id, studentId), item.max)}
-                    className={`h-11 w-20 rounded-lg border px-2 text-right text-[15px] outline-none focus:ring-2 focus:ring-primary/20 ${
-                      isOutOfRange(gradeValue(item.id, studentId), item.max)
-                        ? "border-danger text-danger"
-                        : "border-line text-ink"
-                    }`}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (window.confirm(`${t("deleteConfirm", lang)}\n\n${item.name}`)) {
-                        deleteGradeItem(course.id, item.id);
-                      }
-                    }}
-                    aria-label={`Supprimer ${item.name}`}
-                    className="su-tap grid place-items-center rounded-full text-muted hover:text-danger"
-                  >
-                    <Trash2 size={16} aria-hidden />
-                  </button>
-                </div>
-              </div>
-
-              <textarea
-                value={feedbackValue(item.id, studentId)}
-                onChange={(e) =>
-                  setFeedbackDrafts((d) => ({
-                    ...d,
-                    [`${item.id}:${studentId}`]: e.target.value,
-                  }))
-                }
-                rows={2}
-                placeholder={t("feedback", lang)}
-                aria-label={`${t("feedback", lang)} — ${item.name}`}
-                className="su-input mt-2 resize-none text-[14px]"
-              />
-            </div>
-          ))}
-
-          <div className="flex items-center justify-between bg-surface px-4 py-3">
-            <span className="text-[15px] font-bold text-ink">{t("courseTotal", lang)}</span>
-            <span className="text-[15px] font-bold text-ink">
-              {formatGrade(liveTotal(studentId))}
-            </span>
-          </div>
-        </section>
+        <GradesTable course={course} studentId={studentId} editable />
       ) : (
-        <section className="su-card overflow-hidden">
+        <section className="su-card mx-3 mb-3 overflow-hidden">
           <div className="overflow-x-auto">
             <table className="min-w-full border-collapse text-[13px]">
               <thead>
@@ -268,17 +188,19 @@ export function GradeEditor({ course }: { course: Course }) {
         </section>
       )}
 
-      <button
-        type="button"
-        onClick={save}
-        disabled={!dirty}
-        className="su-tap flex w-full items-center justify-center gap-2 rounded-lg bg-primary text-[15px] font-medium text-white disabled:bg-line disabled:text-muted"
-      >
-        <Save size={18} aria-hidden />
-        {t("save", lang)}
-      </button>
+      {view === "matrix" && (
+        <button
+          type="button"
+          onClick={saveMatrix}
+          disabled={!dirty}
+          className="su-tap mx-3 mb-3 flex w-full items-center justify-center gap-2 rounded-lg bg-primary text-[15px] font-medium text-white disabled:bg-line disabled:text-muted"
+        >
+          <Save size={18} aria-hidden />
+          {t("save", lang)}
+        </button>
+      )}
 
-      <p className="su-meta px-1">
+      <p className="su-meta mx-3 mb-3">
         Moyenne du groupe :{" "}
         {formatGrade(
           Math.round(
@@ -288,7 +210,7 @@ export function GradeEditor({ course }: { course: Course }) {
           ) / 100
         )}
       </p>
-    </div>
+    </>
   );
 }
 

@@ -57,6 +57,11 @@ const DICT = {
   feedback: ["Rétroaction", "Feedback"],
   dueDate: ["Date de remise", "Due date"],
   noFeedback: ["Aucune rétroaction", "No feedback"],
+  holdToEdit: ["Maintenez pour modifier", "Hold to edit"],
+  gradeOutOfRange: [
+    "La note doit être comprise entre 0 et",
+    "Grade must be between 0 and",
+  ],
   selectStudent: ["Choisir un étudiant", "Select a student"],
   allStudents: ["Tous les étudiants", "All students"],
   save: ["Enregistrer", "Save"],
