@@ -1,0 +1,45 @@
+name: Déployer la démo sur GitHub Pages
+
+# Publie artifact/studium.html (généré par `npm run artifact`) comme
+# index.html sur la branche gh-pages, à chaque changement sur cette
+# branche. La démo étant une page unique à routage par hash (#/cours…),
+# elle se prête parfaitement à un hébergement statique sans configuration
+# de routage côté serveur.
+
+on:
+  push:
+    branches:
+      - claude/studium-clone-webapp-tg2viu
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - run: npm ci
+
+      - run: npm run artifact
+
+      - name: Prépare le dossier de publication
+        run: |
+          mkdir -p site
+          cp artifact/studium.html site/index.html
+
+      - name: Publie sur la branche gh-pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./site
