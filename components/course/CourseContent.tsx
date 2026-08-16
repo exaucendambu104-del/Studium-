@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import {
   DndContext,
   DragOverlay,
@@ -50,18 +50,17 @@ export function CourseContent({ course }: { course: Course }) {
   const renameSection = useStudium((s) => s.renameSection);
   const deleteSection = useStudium((s) => s.deleteSection);
 
-  const [index, setIndex] = useState(0);
+  const [selectedIndex, setIndex] = useState(0);
   const [panelOpen, setPanelOpen] = useState(false);
   const [activeId, setActiveId] = useState<UniqueIdentifier | null>(null);
 
   const sections = course.sections;
 
-  // Une section supprimée en mode professeur peut laisser l'index hors bornes.
-  useEffect(() => {
-    if (index > sections.length - 1) setIndex(Math.max(0, sections.length - 1));
-  }, [index, sections.length]);
-
-  const current = sections[Math.min(index, sections.length - 1)];
+  // Supprimer une section en mode professeur peut laisser l'index stocké hors
+  // bornes. On le borne au rendu plutôt que de le corriger dans un effet :
+  // pas de rendu en cascade, et l'état reste la seule source de vérité.
+  const index = Math.min(selectedIndex, Math.max(0, sections.length - 1));
+  const current = sections[index];
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),

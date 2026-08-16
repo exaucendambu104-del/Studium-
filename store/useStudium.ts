@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useSyncExternalStore } from "react";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { buildSeed } from "@/data/seed";
@@ -372,7 +372,12 @@ export const useIsTeacher = () => useStudium((s) => s.role === "teacher");
  * signale une erreur d'hydratation.
  */
 export function useHydrated(): boolean {
-  const [hydrated, setHydrated] = useState(false);
-  useEffect(() => setHydrated(true), []);
-  return hydrated;
+  // `useSyncExternalStore` renvoie l'instantané serveur (false) pendant le
+  // rendu SSR et la première hydratation, puis l'instantané client (true).
+  // Plus propre qu'un setState dans un effet, qui déclenche un rendu en
+  // cascade — et que React 19 signale désormais.
+  return useSyncExternalStore(subscribeNoop, () => true, () => false);
 }
+
+/** Aucun changement à écouter : l'abonnement est un no-op. */
+const subscribeNoop = () => () => {};

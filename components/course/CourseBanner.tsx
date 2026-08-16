@@ -1,3 +1,4 @@
+import type { ReactElement } from "react";
 import type { BannerPattern } from "@/lib/types";
 
 /**
@@ -51,8 +52,11 @@ const patternSize: Record<BannerPattern, number> = {
 /**
  * Chaque motif joue uniquement sur le noir/blanc translucide : la couleur
  * de fond transparaît, ce qui donne les aplats mats de StudiUM.
+ *
+ * `ReactElement` et non `JSX.Element` : React 19 a retiré le namespace
+ * JSX global.
  */
-const shapes: Record<BannerPattern, JSX.Element> = {
+const shapes: Record<BannerPattern, ReactElement> = {
   hexagons: (
     <>
       <polygon points="26,2 47,14 47,38 26,50 5,38 5,14" fill="#000" opacity="0.07" />

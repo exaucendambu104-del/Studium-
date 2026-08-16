@@ -28,8 +28,10 @@ Autres commandes :
 ```bash
 npm run build   # build de production
 npm start       # sert le build
-npm run lint    # ESLint (config Next.js)
+npm run lint    # ESLint 9 (config plate, règles Next.js)
 ```
+
+**Node.js 20.9 ou plus** est requis (contrainte de Next 16).
 
 Aucune police n'est téléchargée au build : la typographie utilise une pile système
 arrondie, ce qui permet de lancer le projet hors ligne. Pour passer à Poppins ou
@@ -185,10 +187,15 @@ la page comme d'habitude. Le glisser-déposer est aussi utilisable au clavier
 - **Accessibilité** — cibles tactiles ≥ 44 px (`.su-tap`), rôles ARIA sur les
   onglets, les modales et le sélecteur de rôle, `aria-live` sur les toasts,
   `prefers-reduced-motion` respecté.
+- **Pas de `setState` dans un effet** — l'index de section est borné au rendu et
+  la détection d'hydratation passe par `useSyncExternalStore`, conformément aux
+  règles du compilateur React appliquées par Next 16.
 
 ---
 
 ## Stack
 
-Next.js 14 (App Router) · React 18 · TypeScript · Tailwind CSS ·
+Next.js 16 (App Router, Turbopack) · React 19 · TypeScript · Tailwind CSS ·
 Zustand (avec `persist`) · @dnd-kit · lucide-react
+
+`npm audit` ne remonte aucune vulnérabilité sur les dépendances de production.
