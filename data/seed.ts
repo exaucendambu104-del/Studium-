@@ -692,6 +692,38 @@ function buildMat1903(): Course {
   };
 }
 
+function buildMat1903H26(): Course {
+  const id = "mat1903-a-h26";
+  const participants = makeParticipants(id, "MAT1903", 82);
+
+  const gradeItems: GradeItem[] = [
+    gradeItem("mat1903h26-q1", "quiz", "Quiz 1 - Limites", 10, 10, 9, participants, "23 janvier 2026"),
+    gradeItem("mat1903h26-q2", "quiz", "Quiz 2 - Dérivées", 10, 10, 7.5, participants, "20 février 2026"),
+    gradeItem("mat1903h26-intra", "exam", "Examen intra", 30, 100, 71, participants, "25 février 2026"),
+    gradeItem("mat1903h26-final", "exam", "Examen final", 50, 100, null, participants, "22 avril 2026"),
+  ];
+
+  return {
+    id,
+    code: "MAT1903-A-H26",
+    title: "Calcul différentiel",
+    department: "Département de mathématiques et de statistique",
+    term: "H26",
+    color: "#4F8FE0",
+    pattern: "diamonds",
+    sections: buildMathSections("Calcul", CALCULUS_WEEKS),
+    participants,
+    gradeItems,
+    competencies: [
+      { id: "cal26-c1", title: "Calculer une limite et lever une indétermination", state: "achieved" },
+      { id: "cal26-c2", title: "Dériver une fonction composée", state: "achieved" },
+      { id: "cal26-c3", title: "Résoudre un problème d'optimisation", state: "progress" },
+      { id: "cal26-c4", title: "Esquisser le graphe d'une fonction à partir de ses dérivées", state: "progress" },
+      { id: "cal26-c5", title: "Interpréter l'intégrale définie comme une aire", state: "none" },
+    ],
+  };
+}
+
 /* -------------------------------------------------------------------------- */
 /*  Contenus transversaux                                                      */
 /* -------------------------------------------------------------------------- */
@@ -821,8 +853,9 @@ export function buildSeed(): StudiumData {
   const fas = buildFas1919();
   const matA = buildMat1905A();
   const mat1903 = buildMat1903();
+  const mat1903H26 = buildMat1903H26();
 
-  const courses = [ecn, matC, fas, matA, mat1903];
+  const courses = [ecn, matC, fas, matA, mat1903, mat1903H26];
 
   const ecnLast = ecn.sections[ecn.sections.length - 1];
   const fasModule8 = fas.sections.find((s) => s.title.startsWith("Module 8"))!;
@@ -892,7 +925,7 @@ export function buildSeed(): StudiumData {
 
   return {
     courses,
-    courseOrder: [ecn.id, matC.id, fas.id, matA.id, mat1903.id],
+    courseOrder: [ecn.id, matC.id, fas.id, matA.id, mat1903.id, mat1903H26.id],
     announcements: ANNOUNCEMENTS,
     timeline,
     recentItems,
