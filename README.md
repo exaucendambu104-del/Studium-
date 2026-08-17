@@ -100,9 +100,18 @@ Repères dans `seed.ts` :
 | Les annonces / messages / notifications | `ANNOUNCEMENTS`, `MESSAGES`, `buildNotifications()` |
 | L'étudiant connecté | `CURRENT_STUDENT_ID` et la constante `ME` |
 
-Après modification, videz les données persistées : **Plus → Réinitialiser les
-données de démo** (le store ne relit `buildSeed()` qu'au premier lancement ou après
-une réinitialisation).
+Le store ne relit `buildSeed()` en entier qu'au tout premier lancement ; ensuite,
+c'est la sauvegarde locale du navigateur qui fait autorité. Un **nouveau** cours
+(un `id` inédit) apparaît automatiquement pour tout le monde à la prochaine
+visite — mais seulement si vous **incrémentez `version`** dans la config
+`persist(...)` de `store/useStudium.ts` (la fonction `migrate` s'occupe
+ensuite d'ajouter le cours manquant sans toucher aux notes ou à l'ordre des
+cartes déjà personnalisés par quelqu'un). Sans ce coup de version, le nouveau
+cours reste invisible pour quiconque a déjà visité le site.
+
+Pour tout le reste (modifier un cours existant, une section, une grille…),
+la seule façon fiable de voir le changement est de vider les données
+persistées : **Plus → Réinitialiser les données de démo**.
 
 ### Les notes des autres étudiants
 

@@ -329,7 +329,36 @@ export const useStudium = create<StudiumState>()(
     }),
     {
       name: "studium-clone-v1",
-      version: 1,
+      version: 2,
+      /**
+       * Sans ceci, un cours ajouté à `data/seed.ts` après la première visite
+       * de quelqu'un resterait invisible pour lui : la sauvegarde locale du
+       * navigateur (l'ancien seed, avec ses éventuelles modifications)
+       * l'emporte sur le nouveau `buildSeed()` à chaque rechargement.
+       *
+       * À chaque changement de `version`, on ajoute les cours du seed actuel
+       * absents de la sauvegarde — sans toucher aux cours déjà connus, pour
+       * ne pas écraser des notes ou un ordre de cartes déjà personnalisés.
+       */
+      migrate: (persisted) => {
+        const state = persisted as StudiumState;
+        if (!state?.data?.courses) return state;
+
+        const fresh = buildSeed();
+        const knownIds = new Set(state.data.courses.map((c) => c.id));
+        const newCourses = fresh.courses.filter((c) => !knownIds.has(c.id));
+
+        if (newCourses.length === 0) return state;
+
+        return {
+          ...state,
+          data: {
+            ...state.data,
+            courses: [...state.data.courses, ...newCourses],
+            courseOrder: [...state.data.courseOrder, ...newCourses.map((c) => c.id)],
+          },
+        };
+      },
     }
   )
 );
